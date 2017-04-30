@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
     <meta charset="utf-8">
-    <title>Bootstrap Admin</title>
+    <title>证券交易系统</title>
     <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
@@ -60,7 +60,9 @@
     </script>
 
     <script type="text/javascript">
-        
+        $.ajaxSetup({
+          async:false
+        });
 
        $(document).ready(function(){
           // $("#import").click(function(){
@@ -70,60 +72,208 @@
               var page = 0;
               var count = 0;
               var flag = true;
+              var page_max;
+              var key;
+              var key1;
+              var key2;
+              var info;
+              var chosenUser;
+              var page_index
 
               var currentPage = 0;
-              function queryPage(){
-                 $("#t_body").html()
-                  $("#t_body").html(insert[currentPage]);
-              }
-              $.ajax({
-                url:"http://localhost/AircraftAdmin-Free/getClients.php",
-                type:"GET",
-                dataType:"json",
-                async:false,
-                success:function(data){
-                      $("#t_body").html("")
-                      var dataobj = eval(data);
-                      var newline = false;
-                      insert[page] = "";
-                      $.each(dataobj,function(i,item){
-                        insert[page]+= "<tr>";
-                        $.each(item,function(j,item_in){
-                          
-                            insert[page] += "<td>"+item_in+"</td>"                        
-                        })
-                          count += 1;
-                          if (count %5 ==0){
-                            
-                            insert[page]+="</tr></tbody>"
-                            page += 1;
-                            insert[page] = "";
-                          }
-                         
-                      })
-                      
-                      for (var i  = 0;i < page;i += 1){
-                        var liadd = "<li><a href='#'>"+i+"</a></li>"
-                        $("#pages").append(liadd)
-                      }
+              getClients('all','','','');
+              init(1)
 
-                      $("#pages").find('li').click(function(){
-                          currentPage = $(this).index();
-                          queryPage()
-                      })
-                      if(flag == true){
-                        currentPage = 0;
-                        queryPage()
-                        flag = false
-                      }
+              $('#search').click(function () {
+                  attr = $('#attr').val();
+                 
+                  if (attr == 'date') {
+                      key1 = $('#input_text1').val();
+                      key2 = $('#input_text2').val();
+                      if(key1 == '' && key2 == '')
+                          attr = 'all';
+                  }else{
+                    key = $('#input_text').val();
+                    if(key == '')
+                      attr = 'all';
+                  }
+                  getClients(attr, key, key1, key2);
+                  init(1);
+              });
 
-                },
-                error:function(XMLHttpRequest, textStatus, errorThrown) {
-                    alert(XMLHttpRequest.status);
-                    alert(XMLHttpRequest.readyState);
-                    alert(textStatus);
+
+
+              $('#attr').change(function () {
+                if($(this).val() == 'date') {
+                    $('#search_input').empty();
+                    $('#search_input').append(
+                    '<div class="col-md-5"> ' +
+                    '<input type="text" placeholder="格式:xxxx-xx-xx" class="form-control" id = "input_text1"> ' +
+                    '</div> ' +
+                    '<div class="col-md-1"> ' +
+                    '<h4>-</h4> ' +
+                    '</div> ' +
+                    '<div class="col-md-5"> ' +
+                    '<input type="text" placeholder="格式:xxxx-xx-xx" class="form-control" id = "input_text2"> ' +
+                    '</div>');
+                }else if($(this).val() == 'sex'){
+                  $('#search_input').empty()
+                  $('#search_input').append('<input type = "radio" name = "sex" value = "1" checked = "checked" id="sex" />'+
+                    '男 <input type = "radio" name = "sex" value = "0" checked = "checked" id="sex"/>女'
+                    )
                 }
+                else{
+                    $('#search_input').empty();
+                    $('#search_input').append('<div class="col-md-11"> ' +
+                      '<input type="text" placeholder="" class="form-control" id = "input_text">' +
+                      '</div> ');
+                }
+              });
+              $('tbody>tr>td.simple_info').click(function(){
+                window.location.href = "user_info.html?username=" + $(this).parent().parent().find('td').eq(1).text();
+                // alert("click")
               })
+             
+
+              $('a.delete').click(function(){
+                 chosenUser = $(this).index('a.delete')
+
+              })
+
+              $("#delete_button").click(function(){
+                delete_item(chosenUser + (currentPage-1)*10);
+              })
+
+
+              function delete_item(index){
+                $.get('php/delete_user.php',
+                  {username:info[index].username},function(data){
+
+                    if (data == 1){
+                      info.splice(index,1);
+                      init(currentPage);
+                    }else{
+                      alert("删除失败")
+                    }
+                  })
+                
+              }
+               var pgs = $('#pages');
+              if(page_max > 10) {
+                  if(page_num <= 5) {
+                      for (i = 1; i <= 8; i++) {
+                          pgs.find('li').eq(i).find('a').text(i);
+                      }
+                      pgs.find('li').eq(9).find('a').text('...');
+                      pgs.find('li').eq(10).find('a').text(page_max);
+                  }
+                  else if(page_num < page_max - 5) {
+                      pgs.find('li').eq(1).find('a').text(1);
+                      pgs.find('li').eq(2).find('a').text('...');
+                      for (i = -2; i <= 3; i++) {
+                          pgs.find('li').eq(i + 5).find('a').text(parseInt(page_num) + i);
+                      }
+                      pgs.find('li').eq(9).find('a').text('...');
+                      pgs.find('li').eq(10).find('a').text(page_max);
+                  }
+                  else {
+                      pgs.find('li').eq(1).find('a').text(1);
+                      pgs.find('li').eq(2).find('a').text('...');
+                      for (i = 3; i <= 10; i++) {
+                          pgs.find('li').eq(i).find('a').text(parseInt(page_max) - (10 - i));
+                      }
+                  }
+              }
+            pgs.find('li').eq(page_index).addClass('active').siblings().removeClass().end();
+
+              function getClients(attr,key,key1,key2){
+                $.post(
+                'php/get_clients.php',
+                // type:"GET",
+                {attr:attr, key:key, key1:key1, key2:key2},
+                function(data){
+                      info = jQuery.parseJSON(data);
+                      
+                      
+                     
+                     
+
+                })
+              }
+              function init(page){
+                var i;
+                var pgs = $("#pages");
+                page_max = Math.ceil(info.length/10)
+                if (page <= page_max)
+                  currentPage = page;
+                else 
+                  currentPage = page_max;
+                 pgs.empty();
+                  pgs.append('<li><a href="#">&laquo;</a></li>');
+                  for (i = 1; i <= page_max; i++) {
+                      pgs.append('<li><a href="#">' + i + '</a></li>');
+                      //分页列表最多显示10页，大于10页则使用省略号
+                      if(i >= 8 && page_max > 10) {
+                          pgs.append('<li><a href="#">...</a></li>');
+                          pgs.append('<li><a href="#">' + page_max + '</a></li>');
+                          break;
+                      }
+                  }
+                  pgs.append('<li><a href="#">&raquo;</a></li>');
+                  queryPage()    
+
+                  pgs.find('li').click(function () {
+                  if($(this).text() == '«') {
+                      if (currentPage > 1)
+                          currentPage--;
+                  }
+                  else if($(this).text() == '»') {
+                      if (currentPage < page_max)
+                          currentPage++;
+                  }
+                  else if($(this).text() != '...') {
+                      currentPage = $(this).text();
+                  }
+                  if(currentPage <= 5)
+                      page_index = currentPage;
+                  else if(currentPage < page_max - 5)
+                      page_index = 5;
+                  else
+                      page_index =  10 - (page_max - currentPage);
+                  queryPage();
+        
+                      
+              })
+            }
+              function queryPage(){
+               var i;
+               var tbs = $("#t_body");
+               tbs.empty();
+               for ( i = (currentPage-1) * 10 + 1;i <= info.length && i <= currentPage * 10;i++){
+                tbs.append('<tr>' +
+                  '<td class = "simple_info">' + info[i-1].num + '</td>' +
+                  '<td class = "simple_info">' + info[i-1].username + '</td>' +
+                  '<td class = "simple_info">' + info[i-1].name + '</td>' +
+                  '<td class = "simple_info">' + info[i-1].contact + '</td>' +
+                  '<td>'+
+                  '<a class = "edit"><i class="fa fa-pencil"></i></a>'+   
+                  '<a href="#myModal" role="button" data-toggle="modal" class = "delete">'+
+                  '<i class="fa fa-trash-o"></i></a>'+
+                  '</td>'
+
+
+                  ) 
+               }
+              }
+
+              function sort(attr){
+                info.sort(function(x,y){
+                  if (attr == 'id'){
+                    return x.id < y.id;
+                  }
+                })
+              }
+              
           // }
        })
     </script>
@@ -194,42 +344,47 @@
     </div>
 
     <div class="content">
-        <!-- <div class="header">
-            
-            <h1 class="page-title">Users</h1>
-                    <ul class="breadcrumb">
-            <li><a href="index.html">Home</a> </li>
-            <li class="active">Users</li>
-        </ul>
+    <!-- 搜索框 -->
+      <div class="row">
+            <div id="search_input" class="col-md-4">
+                <div class="col-md-11">
+                <input type="text" placeholder="" class="form-control" id = "input_text">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select id="attr" class="form-control">
+                    <option value="ID">编号</option>>
+                    <option value="username">用户名</option>
+                    <option value="name">姓名</option>
+                    <option value="date">注册时间</option>
+                    <option value="sex">性别</option>
+                    <option value="contact">联系方式</option>
 
-        </div> -->
+                </select>
+            </div>
+            <button class="btn btn-primary" id="search"> 搜索</button>
+        </div>
+       
         <div class="main-content">
-            
-<!-- <div class="btn-toolbar list-toolbar">
-    <button class="btn btn-primary"><i class="fa fa-plus"></i> New User</button>
-    <button class="btn btn-default" id = "import">Import</button>
-    <button class="btn btn-default">Export</button>
-  <div class="btn-group">
-  </div>
-</div> -->
-<table class="table" id = "usertable2">
-  <thead>
-    <tr>
-      <th>序号</th>
-      <th>姓氏</th>
-      <th>名字</th>
-      <th>用户名</th>
-      <th style="width: 3.5em;"></th>
-    </tr>
-  </thead>
-  <tbody id = "t_body">
+<!-- 用户信息 -->
+      <table class="table" id = "usertable">
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>用户名</th>
+            <th>姓名</th>
+            <th>联系方式</th>
+            <th style="width: 3.5em;"></th>
+          </tr>
+        </thead>
+      <tbody id = "t_body">
  
-  </tbody> 
-</table>
-
-<ul class="pagination" id = "pages">
+      </tbody> 
+      </table>
+<!-- 翻页 -->
+      <ul class="pagination" id = "pages">
  
-</ul>
+      </ul>
 
 <div class="modal small fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -239,11 +394,11 @@
             <h3 id="myModalLabel">Delete Confirmation</h3>
         </div>
         <div class="modal-body">
-            <p class="error-text"><i class="fa fa-warning modal-icon"></i>Are you sure you want to delete the user?<br>This cannot be undone.</p>
+            <p class="error-text"><i class="fa fa-warning modal-icon"></i>是否删除该账户<br</p>
         </div>
         <div class="modal-footer">
             <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">Cancel</button>
-            <button class="btn btn-danger" data-dismiss="modal">Delete</button>
+            <button class="btn btn-danger" data-dismiss="modal" id = "delete_button">Delete</button>
         </div>
       </div>
     </div>
@@ -253,7 +408,6 @@
             <footer>
                 <hr>
 
-                <!-- Purchase a site license to remove this link from the footer: http://www.portnine.com/bootstrap-themes -->
                 <p class="pull-right">A <a href="http://www.portnine.com/bootstrap-themes" target="_blank">Free Bootstrap Theme</a> by <a href="http://www.portnine.com" target="_blank">Portnine</a></p>
                 <p>© 2014 <a href="http://www.portnine.com" target="_blank">Portnine</a></p>
             </footer>

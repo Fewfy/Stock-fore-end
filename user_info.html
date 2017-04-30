@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
     <meta charset="utf-8">
-    <title>Bootstrap Admin</title>
+    <title>证券交易管理系统</title>
     <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
@@ -59,72 +59,68 @@
     </script>
 
     <script type="text/javascript">
+      $.ajaxSetup({
+        async:false
+      });
       $(document).ready(function(){
-        $("#username").blur(function(){
-            var name = $("#username").val()
-            $.ajax({
-              method:'post',
-              url:'php/get_name.php',
-              data:{username:name},
-              success:function(data){
-                 if(data == 1){
-                  $("#usernameCheck").html("<font color=\"red\">用户名已经存在</font>")
-                }else{
-                  $("#usernameCheck").html("<font color=\"green\">用户名合法</font>")
-                }
-                // alert(data)
-              },
-              error:function(XMLHttpRequest, textStatus, errorThrown) {
-					alert(XMLHttpRequest.status);
-					alert(XMLHttpRequest.readyState);
-					alert(textStatus);
-				},
-            });
-            
-        });
-        $("#password").blur(function(){
-            var inputValue = $("#password").val()
-            var num = inputValue.length
-            if(num < 6){
-              $("#check").show().html("<font color=\"red\">至少6个字符</font>")
-            }else{
-              $("#check").hide()
-            }
-        });
-        $("#inputPasswordConfirm").blur(function(){
-            var confValue = $("#inputPasswordConfirm").val()
-            if ($("#password").val() != confValue){
-              $("#nomatch").show().html("<font color=\"red\">两次输入密码不一致</font>")
-            }   
-            else{
-              $("#nomatch").hide()
-            }
-        });
-        $("#submit").click(function(){
-            var username  = $("#username").val()
-            var password = $("#password").val()
-            var name = $("#name").val()
-            var sex = $("#sex").val()
-            var email = $("#Email").val()
-            var phone = $("#phone").val()
-            var id = $("#ID").val()
-            var career = $("#career").val()
-            var address = $("#address").val()
-            $.ajax({
-              method:'post',
-              url:'php/register.php',
-              dataType:'text',
-              contentType: "application/json;charset=utf-8", 
-              data:{username:username,password:password,name:name,sex:sex,email:email,phone:phone,id:id,career:career,address:address},
-              success:function(data){
-                if(data){
-                    $("#upload").show().html("<font color = \"green\">注册成功</font>")
-                }else{
-                    $("#upload").show().html("<font color = \"red\">注册失败</font>")
-                }
-              }
+
+          var info;
+
+          get_info();
+          $("#edit").click(edit);
+          $("#delete").click(delete_info);
+
+          function delete_info(){
+            $.post('php/delete_user.php',{username:$("#username")},function(data){
+
             })
-        })
+          }
+
+          function edit(){
+            var ins = $('input.form-control');
+            ins.eq(2).removeAttr("disabled");
+            ins.eq(3).removeAttr("disabled");
+            ins.eq(4).removeAttr("disabled");
+            ins.eq(5).removeAttr("disabled");
+            var add = $('textarea.form-control')
+            add.eq(0).removeAttr("disabled")
+          }
+
+          function get_info(){
+            $.get('php/userinfo.php',{username:'username',key:'',key1:'',key2:''},function(data){
+              // alert(data)
+              info = jQuery.parseJSON(data);
+            });
+            // alert(info.sex)
+            $('#username').val(info.username);
+            $('#name').val(info.name);
+            $('#contact').val(info.contact)
+            var s = $('input.radio')
+            if(info.sex){
+
+              $("#sex_m").attr("checked",true)
+            }
+            else{
+              $("#sex_f").attr("checked",true)
+            }
+
+
+              $("#sex_m").removeAttr("disabled")
+            $("#sex").val(info.sex)
+            $('#email').val(info.email)
+            $('#ID').val(info.ID)
+            $('#career').val(info.career)
+            $('#address').val(info.address)
+          }
+
+          function getUrlParam(name) {
+
+              var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
+              var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+              if (r != null)
+                  return unescape(r[2]);
+              return null; //返回参数值
+          }
       })
     </script>
 
@@ -189,8 +185,8 @@
     <ul>
     <li><a href="#" data-target=".dashboard-menu" class="nav-header" data-toggle="collapse"><i class="fa fa-fw fa-dashboard"></i> 账户管理<i class="fa fa-collapse"></i></a></li>
     <li><ul class="dashboard-menu nav nav-list collapse in">
-            <li ><a href="users.html"><span class="fa fa-caret-right"></span> 账户列表</a></li>
-            <li class="active"><a href="user.html"><span class="fa fa-caret-right"></span>账户注册</a></li>
+            <li class="active"><a href="users.html"><span class="fa fa-caret-right"></span> 账户列表</a></li>
+            <li ><a href="user.html"><span class="fa fa-caret-right"></span>账户注册</a></li>
     </ul></li>
 
    
@@ -209,86 +205,86 @@
 
     <div class="content">
         <div class="header">
-            
-            <h1 class="page-title">注册用户</h1>
-                    <ul class="breadcrumb">
-           <!--  <li><a href="index.html">Home</a> </li>
-            <li><a href="users.html">Users</a> </li>
-            <li class="active">jsmith</li> -->
+         <div class="header">
+        <h1 class="page-title">用户信息</h1>
+        <ul class="breadcrumb">
+            <li><a href="#">账户管理</a> </li>
+            <li class="active">账户列表</li>
+            <li class="active">用户信息</li>
         </ul>
-
+        </div>
         </div>
         <div class="main-content">
             
 
 <div class="row">
   <div class="col-md-4">
+  <div class="btn-toolbar list-toolbar">
+                    <button id="save" disabled = "disabled" class="btn btn-primary">保存</button>
+                    <button id="edit" class="btn btn-danger">修改</button>
+                    <button id="delete" class="btn btn-danger">删除</button>
+                    <button id="report" class="btn btn-danger">挂失</button>
+  </div>
     <br>
     <div id="myTabContent" class="tab-content">
       <div class="tab-pane active in" id="home">
       <form id="tab2">
         <div class="form-group">
         <label>用户名</label>
-        <input type="text" id = "username" placeholder="用户名由6位以上的字母数字及下划线组成" class="form-control"></div>
+        <input type="text" id = "username" disabled="disabled" placeholder="用户名由6位以上的字母数字及下划线组成" class="form-control"></div>
         <div id = "usernameCheck"/></div>
-        <div>
-        <label>密码</label>
-        <input type="password" id = "password" placeholder="至少6位字母或数字组合" class = "form-control" data-minlength="6" required >
-        <div id="check"/>
-        </div>
-        <div>
-        <label>确认密码</label>
-        <input type="password" id="inputPasswordConfirm" data-match="#password" data-match-error="Whoops, these don't match" placeholder="请在此输入密码" class = "form-control"  required>
-            <div id="nomatch"/>
-        </div>
+        
         <div class="form-group">
         <label>姓名</label>
-        <input type="text" placeholder="" id="name" class="form-control">
+        <input type="text" placeholder="" id="name" disabled="disabled" class="form-control">
         </div>
         <div>
         <label>性别</label><br />
-        <input type = "radio" name = "sex" value = "1" checked = "checked" id="sex" />
-        男 <input type = "radio" name = "sex" value = "0" checked = "checked" id="sex"/>女<br /><br />
+        <input type = "radio" name = "sex_n" disabled="disabled" value = "1" checked = "checked" id="sex_f" />
+        女 <input type = "radio" name = "sex_n" disabled="disabled" value = "0"  id="sex_m"/>男<br /><br />
         </div>
         <div class="form-group">
         <label>Email</label>
-        <input type="text" placeholder="aa@bb.ccc" id="Email" class="form-control">
+        <input type="text" placeholder="aa@bb.ccc" disabled="disabled" id="Email" class="form-control">
         </div>
         <div>
         <label>手机</label>
-        <input type="text" placeholder="xxx-xxxx-xxxx" id="phone" class="form-control">
+        <input type="text" placeholder="xxx-xxxx-xxxx" disabled="disabled" id="contact" class="form-control">
         </div>
         <div>
         <label>身份证</label>
-        <input type="text" placeholder="请输入大陆身份证" class="form-control" id = "ID">
+        <input type="text" placeholder="请输入大陆身份证" disabled="disabled" class="form-control" id = "ID">
         </div>
         <div>
         <label>职业</label>
-        <input type="text" class="form-control" id = "career">
+        <input type="text" class="form-control" disabled="disabled" id = "career">
         </div>
         <div class="form-group">
           <label>家庭住址</label>
-          <textarea value="Smith" rows="3" class="form-control" id="address"></textarea>
+          <textarea value="Smith" rows="3" class="form-control" disabled="disabled" id="address"></textarea>
         </div>
 
           <div>
-              <button class="btn btn-primary">注册完成</button><br /><br />
+              <button class="btn btn-primary">完成</button><br /><br />
           </div>
         </form>
       </div>
 
+      <div class="tab-pane fade" id="profile">
+
+       
+        
+      </div>
     </div>
 
    <!--  <div class="btn-toolbar list-toolbar">
       <button class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
       <a href="#myModal" data-toggle="modal" class="btn btn-danger">Delete</a>
     </div> -->
-  </div>
-</div>
 
 
 
-
+    
 
     <script src="lib/bootstrap/js/bootstrap.js"></script>
     <script type="text/javascript">
